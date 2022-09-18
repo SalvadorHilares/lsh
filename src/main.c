@@ -12,6 +12,8 @@
 
 #include <sys/wait.h>
 #include <sys/types.h>
+#include <sys/stat.h> // library to import mkdir syscall
+#include <fcntl.h> // library to import openat
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -23,6 +25,9 @@
 int lsh_cd(char **args);
 int lsh_help(char **args);
 int lsh_exit(char **args);
+int lsh_mkdir(char **args);
+int lsh_rm(char **args);
+int lsh_touch(char **args);
 
 /*
   List of builtin commands, followed by their corresponding functions.
@@ -30,13 +35,19 @@ int lsh_exit(char **args);
 char *builtin_str[] = {
   "cd",
   "help",
-  "exit"
+  "exit",
+  "mkdir",
+  "rm",
+  "touch"
 };
 
 int (*builtin_func[]) (char **) = {
   &lsh_cd,
   &lsh_help,
-  &lsh_exit
+  &lsh_exit,
+  &lsh_mkdir,
+  &lsh_rm,
+  &lsh_touch
 };
 
 int lsh_num_builtins() {
@@ -60,6 +71,56 @@ int lsh_cd(char **args)
     if (chdir(args[1]) != 0) {
       perror("lsh");
     }
+  }
+  return 1;
+}
+
+/**
+  @brief Builtin comand: create a new directory 
+  @param args List of args. args[1] is name to new directory
+  @return Always returns 1, to continue executing
+ */
+int lsh_mkdir(char **args){
+  if (args[1] == NULL){
+    fprintf(stderr, "lsh: expected argument to \"mkdir\"\n");
+  }else{
+    if(mkdir(args[1],S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1){
+      perror("fail to create directoy");
+    }
+  }
+  return 1;
+}
+
+/**
+   @brief Builtin comand: remove file in especific directory
+   @param args List of args. args[1] is name to delete file
+   @return Always return 1, to continue executing
+ */
+int lsh_rm(char **args){
+  if (args[1] == NULL){
+    fprintf(stderr, "lsh: expected argument to \"rm\"\n");
+  }else{
+    if(unlink(args[1]) == -1){
+      perror("fail to delete file");
+    }
+  }
+  return 1;
+}
+
+/**
+   @brief  Builtin comand: create file in actually directory
+   @param args List of args. args[1] is name to create file
+   @return Always return 1, to continue executing
+ */
+int lsh_touch(char **args){
+  if (args[1] == NULL){
+    fprintf(stderr, "lsh: expected argument to \"touch\"\n");
+  }else{
+    int file = openat(AT_FDCWD,args[1],O_RDONLY|O_CLOEXEC);
+    if( file == -1){
+      perror("fail to create file");
+    }
+    close(file);
   }
   return 1;
 }
