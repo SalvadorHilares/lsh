@@ -116,7 +116,7 @@ int lsh_touch(char **args){
   if (args[1] == NULL){
     fprintf(stderr, "lsh: expected argument to \"touch\"\n");
   }else{
-    int file = openat(AT_FDCWD,args[1],O_RDONLY|O_CLOEXEC);
+    int file = open(args[1],O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     if( file == -1){
       perror("fail to create file");
     }
